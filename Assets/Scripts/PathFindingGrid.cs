@@ -2,31 +2,42 @@
 using System.Collections.Generic;
 using UnityEngine;
 using CodeMonkey.Utils;
+using System;
 
-public class PathFindingGrid<T>
+public class PathFindingGrid<TGridObject>
 {
     private int m_width;
     private int m_height;
     private float m_cellSize;
-    private T[,] m_gridArray;
+    private TGridObject[,] m_gridArray;
     private TextMesh[,] m_debugTextArray;
     private Vector3 m_origin;
 
-    public PathFindingGrid(int width, int height, float cellSize, Vector3 origin)
+    public PathFindingGrid(int width, int height, float cellSize, Vector3 origin, Func<PathFindingGrid<TGridObject>, int, int, TGridObject> createGridObject)
     {
         m_width = width;
         m_height = height;
         m_cellSize = cellSize;
         m_origin = origin;
 
-        m_gridArray = new T[width, height];
+        m_gridArray = new TGridObject[width, height];
         m_debugTextArray = new TextMesh[width, height];
+
+        // Initilise grid with objects
+        for (int x = 0; x < m_gridArray.GetLength(0); x++)
+        {
+            for (int y = 0; y < m_gridArray.GetLength(1); y++)
+            {
+                m_gridArray[x, y] = createGridObject(this, x, y);
+            }
+        }
+
 
         for (int x = 0; x < m_gridArray.GetLength(0); x++)
         {
             for (int y = 0; y < m_gridArray.GetLength(1); y++)
             {
-                m_debugTextArray[x, y] = UtilsClass.CreateWorldText(m_gridArray[x, y].ToString(), null, GetWorldPosition(x, y) + new Vector3(cellSize, cellSize) * 0.5f, 10, Color.white, TextAnchor.UpperLeft);
+                m_debugTextArray[x, y] = UtilsClass.CreateWorldText(m_gridArray[x, y]?.ToString(), null, GetWorldPosition(x, y) + new Vector3(cellSize, cellSize) * 0.5f, 10, Color.white, TextAnchor.UpperLeft);
                 Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x, y + 1), Color.white, 100f);
                 Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x + 1, y), Color.white, 100f);
             }
@@ -48,7 +59,7 @@ public class PathFindingGrid<T>
             );
     }
 
-    public void SetValue(int x, int y, T val)
+    public void SetGridObject(int x, int y, TGridObject val)
     {
         // Ignore invalid values
         if (x >= 0 && y >= 0 && x < m_width && y < m_height)
@@ -58,13 +69,18 @@ public class PathFindingGrid<T>
         }
     }
 
-    public void SetValue(Vector3 worldPosition, T val)
+    public void SetGridObject(Vector3 worldPosition, TGridObject val)
     {
         Vector2Int xy = GetXY(worldPosition);
-        SetValue(xy.x, xy.y, val);
+        SetGridObject(xy.x, xy.y, val);
     }
 
-    public T GetValue(int x, int y)
+    public void TriggerGridObjectChanged(int x, int y)
+    {
+
+    }
+
+    public TGridObject GetGridObject(int x, int y)
     {
         // Ignore invalid values
         if (x >= 0 && y >= 0 && x < m_width && y < m_height)
@@ -75,9 +91,9 @@ public class PathFindingGrid<T>
         return default;
     }
 
-    public T GetValue(Vector3 worldPosition)
+    public TGridObject GetGridObject(Vector3 worldPosition)
     {
         Vector2Int xy = GetXY(worldPosition);
-        return GetValue(xy.x, xy.y);
+        return GetGridObject(xy.x, xy.y);
     }
 }
