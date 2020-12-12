@@ -14,11 +14,19 @@ public class PathFindingNode
 
     public PathFindingNode cameFromNode;
 
+    public int X { get => m_x; }
+    public int Y { get => m_y; }
+
     public PathFindingNode(PathFindingGrid<PathFindingNode> grid, int x, int y)
     {
         m_grid = grid;
         m_x = x;
         m_y = y;
+    }
+
+    public void CalculateFCost()
+    {
+        m_fCost = m_gCost + m_hCost;
     }
 
     public override string ToString()

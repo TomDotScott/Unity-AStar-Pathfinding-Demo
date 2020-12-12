@@ -13,6 +13,9 @@ public class PathFindingGrid<TGridObject>
     private TextMesh[,] m_debugTextArray;
     private Vector3 m_origin;
 
+    public int Width { get => m_width; }
+    public int Height { get => m_height; }
+
     public PathFindingGrid(int width, int height, float cellSize, Vector3 origin, Func<PathFindingGrid<TGridObject>, int, int, TGridObject> createGridObject)
     {
         m_width = width;
