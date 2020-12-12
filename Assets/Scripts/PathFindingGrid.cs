@@ -54,7 +54,7 @@ public class PathFindingGrid<TGridObject>
         return new Vector3(x, y) * m_cellSize + m_origin;
     }
 
-    private Vector2Int GetXY(Vector3 worldPosition)
+    public Vector2Int GetXY(Vector3 worldPosition)
     {
         return new Vector2Int(
             Mathf.FloorToInt((worldPosition - m_origin).x / m_cellSize),

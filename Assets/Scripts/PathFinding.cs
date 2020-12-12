@@ -16,19 +16,21 @@ public class PathFinding
     // Nodes chosen to traverse
     private List<PathFindingNode> m_closedList;
 
+    public PathFindingGrid<PathFindingNode> Grid { get => m_grid; }
+
     public PathFinding(int width, int height)
     {
         Vector3 bottomLeft = new Vector3(Camera.main.ScreenToWorldPoint(Vector3.zero).x, Camera.main.ScreenToWorldPoint(Vector3.zero).y, 0);
         m_grid = new PathFindingGrid<PathFindingNode>(width, height, 5f, bottomLeft, (PathFindingGrid<PathFindingNode> g, int x, int y) => new PathFindingNode(g, x, y));
     }
 
-    private List<PathFindingNode> FindPath(Vector2Int start, Vector2Int end)
+    public List<PathFindingNode> FindPath(Vector2Int start, Vector2Int end)
     {
         PathFindingNode startNode = m_grid.GetGridObject(start.x, start.y);
         PathFindingNode endNode = m_grid.GetGridObject(end.x, end.y);
 
 
-        m_openList = new List<PathFindingNode> { startNode };
+        m_openList = new List<PathFindingNode>();
         m_closedList = new List<PathFindingNode>();
 
         // Cycle through grid, set g to infinite and calculate f cost
@@ -52,6 +54,7 @@ public class PathFinding
         startNode.m_gCost = 0;
         startNode.m_hCost = CalculateDistanceCost(startNode, endNode);
         startNode.CalculateFCost();
+        m_openList.Add(startNode);
 
         // Cycle through all of the nodes and find a path
         while (m_openList.Count > 0)
@@ -59,41 +62,46 @@ public class PathFinding
             // The current node is the node in the openlist with the lowest F-Cost
             PathFindingNode currentNode = GetLowestFCostNode(m_openList);
 
+            m_openList.Remove(currentNode);
+            m_closedList.Add(currentNode);
+
             // If the currentNode is the end
             if (currentNode == endNode)
             {
-                // We have reached the end of the path
+                // We have reached the end of the path, so return 
+                // the order of nodes to visit
                 return CalculatePath(endNode);
             }
 
-            m_openList.Remove(currentNode);
-            m_closedList.Add(currentNode);
 
             foreach (var neighbour in GetNeighbourNodes(currentNode))
             {
                 // Make sure the current neighbour node isn't in the closed list
-                if (!m_closedList.Contains(neighbour))
+                if (m_closedList.Contains(neighbour))
                 {
-                    int potentialGCost = currentNode.m_gCost + CalculateDistanceCost(currentNode, neighbour);
+                    continue;
+                }
 
+                // Update the node
+                neighbour.cameFromNode = currentNode;
+                neighbour.m_gCost = currentNode.m_gCost + CalculateDistanceCost(currentNode, neighbour);
+
+                // Calculate the new H-Cost for the node
+                neighbour.m_hCost = CalculateDistanceCost(neighbour, endNode);
+                // neighbour.CalculateFCost();
+                neighbour.m_fCost = neighbour.m_gCost + neighbour.m_hCost;
+
+                // if the open list doesn't contain the neighbour, add it
+                if (m_openList.Contains(neighbour))
+                {
                     // see if the potential cost is lower than the cost of the node
-                    if (potentialGCost < neighbour.m_gCost)
+                    if (currentNode.m_gCost > neighbour.m_gCost)
                     {
-                        // Update the node
-                        neighbour.cameFromNode = currentNode;
-                        neighbour.m_gCost = potentialGCost;
-
-                        // Calculate the new H-Cost for the node
-                        neighbour.m_hCost = CalculateDistanceCost(neighbour, endNode);
-                        neighbour.CalculateFCost();
-
-                        // if the open list doesn't contain the neighbour, add it
-                        if (!m_openList.Contains(neighbour))
-                        {
-                            m_openList.Add(neighbour);
-                        }
+                        continue;
                     }
                 }
+
+                m_openList.Add(neighbour);
             }
         }
 
@@ -106,34 +114,35 @@ public class PathFinding
         List<PathFindingNode> neighbourList = new List<PathFindingNode>();
 
         // Find the 8 neightbour positions if they are valid
-        if(currentNode.X - 1 >= 0)
+        if (currentNode.X - 1 >= 0)
         {
             // Left
             neighbourList.Add(GetNode(currentNode.X - 1, currentNode.Y));
-            if(currentNode.Y - 1 >= 0)
+
+            if (currentNode.Y - 1 >= 0)
             {
                 // BL
                 neighbourList.Add(GetNode(currentNode.X - 1, currentNode.Y - 1));
             }
 
-            if(currentNode.Y + 1 < m_grid.Height)
+            if (currentNode.Y + 1 < m_grid.Height)
             {
                 // TL
                 neighbourList.Add(GetNode(currentNode.X - 1, currentNode.Y + 1));
             }
         }
 
-        if(currentNode.X + 1 < m_grid.Width)
+        if (currentNode.X + 1 < m_grid.Width)
         {
             // Right
             neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y));
-            if(currentNode.Y - 1 >= 0)
+            if (currentNode.Y - 1 >= 0)
             {
                 // BR
                 neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y - 1));
             }
 
-            if(currentNode.Y + 1 < m_grid.Height)
+            if (currentNode.Y + 1 < m_grid.Height)
             {
                 // TR
                 neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y + 1));
@@ -141,13 +150,13 @@ public class PathFinding
         }
 
         // Top
-        if(currentNode.Y - 1 >= 0)
+        if (currentNode.Y - 1 >= 0)
         {
             neighbourList.Add(GetNode(currentNode.X, currentNode.Y - 1));
         }
 
         // Bottom
-        if(currentNode.Y + 1 < m_grid.Height)
+        if (currentNode.Y + 1 < m_grid.Height)
         {
             neighbourList.Add(GetNode(currentNode.X, currentNode.Y + 1));
         }
@@ -162,7 +171,24 @@ public class PathFinding
 
     private List<PathFindingNode> CalculatePath(PathFindingNode endNode)
     {
-        return null;
+        List<PathFindingNode> path = new List<PathFindingNode>
+        {
+            endNode
+        };
+
+        PathFindingNode currentNode = endNode;
+
+        // Cycle through the parents until we find a node with no parent
+        // this node is the start node
+        while (currentNode.cameFromNode != null)
+        {
+            path.Add(currentNode.cameFromNode);
+            currentNode = currentNode.cameFromNode;
+        }
+
+        // Reverse the path to go from start to finish
+        path.Reverse();
+        return path;
     }
 
     private int CalculateDistanceCost(PathFindingNode a, PathFindingNode b)
