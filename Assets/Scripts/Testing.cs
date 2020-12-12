@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class Testing : MonoBehaviour
 {
-    private Grid m_grid;
+    private PathFindingGrid<int> m_grid;
 
     // Start is called before the first frame update
     void Start()
     {
-        m_grid = new Grid(4, 2, 3f);
+        m_grid = new PathFindingGrid<int>(4, 2, 3f, new Vector3(-35, 15, 0));
     }
 
     // Update is called once per frame
