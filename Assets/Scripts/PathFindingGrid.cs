@@ -8,13 +8,21 @@ public class PathFindingGrid<TGridObject>
 {
     private int m_width;
     private int m_height;
+
+    public event EventHandler<OnGridValueChangedArgs> OnGridValueChanged;
+    public class OnGridValueChangedArgs : EventArgs
+    {
+        public int m_x;
+        public int m_y;
+    }
+
     private float m_cellSize;
     private TGridObject[,] m_gridArray;
-    private TextMesh[,] m_debugTextArray;
     private Vector3 m_origin;
 
     public int Width { get => m_width; }
     public int Height { get => m_height; }
+    public float CellSize { get => m_cellSize; }
 
     public PathFindingGrid(int width, int height, float cellSize, Vector3 origin, Func<PathFindingGrid<TGridObject>, int, int, TGridObject> createGridObject)
     {
@@ -24,7 +32,6 @@ public class PathFindingGrid<TGridObject>
         m_origin = origin;
 
         m_gridArray = new TGridObject[width, height];
-        m_debugTextArray = new TextMesh[width, height];
 
         // Initilise grid with objects
         for (int x = 0; x < m_gridArray.GetLength(0); x++)
@@ -40,7 +47,6 @@ public class PathFindingGrid<TGridObject>
         {
             for (int y = 0; y < m_gridArray.GetLength(1); y++)
             {
-                m_debugTextArray[x, y] = UtilsClass.CreateWorldText(m_gridArray[x, y]?.ToString(), null, GetWorldPosition(x, y) + new Vector3(cellSize, cellSize) * 0.5f, 10, Color.white, TextAnchor.MiddleCenter);
                 Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x, y + 1), Color.white, 100f);
                 Debug.DrawLine(GetWorldPosition(x, y), GetWorldPosition(x + 1, y), Color.white, 100f);
             }
@@ -68,7 +74,7 @@ public class PathFindingGrid<TGridObject>
         if (x >= 0 && y >= 0 && x < m_width && y < m_height)
         {
             m_gridArray[x, y] = val;
-            m_debugTextArray[x, y].text = val.ToString();
+            OnGridValueChanged?.Invoke(this, new OnGridValueChangedArgs { m_x = x, m_y = y });
         }
     }
 

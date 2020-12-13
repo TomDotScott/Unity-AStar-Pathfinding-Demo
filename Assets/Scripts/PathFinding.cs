@@ -8,7 +8,7 @@ public class PathFinding
     private const int MOVE_STRAIGHT_COST = 10;
     private const int MOVE_DIAGONAL_COST = 15;
 
-    private PathFindingGrid<PathFindingNode> m_grid;
+    public PathFindingGrid<PathFindingNode> Grid;
 
     // Nodes to be searched
     private List<PathFindingNode> m_openList;
@@ -16,37 +16,37 @@ public class PathFinding
     // Nodes chosen to traverse
     private List<PathFindingNode> m_closedList;
 
-    public PathFindingGrid<PathFindingNode> Grid { get => m_grid; }
+   
 
     public PathFinding(int width, int height)
     {
         Vector3 bottomLeft = new Vector3(Camera.main.ScreenToWorldPoint(Vector3.zero).x, Camera.main.ScreenToWorldPoint(Vector3.zero).y, 0);
-        m_grid = new PathFindingGrid<PathFindingNode>(width, height, 5f, bottomLeft, (PathFindingGrid<PathFindingNode> g, int x, int y) => new PathFindingNode(g, x, y));
+        Grid = new PathFindingGrid<PathFindingNode>(width, height, 5f, bottomLeft, (PathFindingGrid<PathFindingNode> g, int x, int y) => new PathFindingNode(g, x, y, true));
     }
 
     public List<PathFindingNode> FindPath(Vector2Int start, Vector2Int end)
     {
-        PathFindingNode startNode = m_grid.GetGridObject(start.x, start.y);
-        PathFindingNode endNode = m_grid.GetGridObject(end.x, end.y);
+        PathFindingNode startNode = Grid.GetGridObject(start.x, start.y);
+        PathFindingNode endNode = Grid.GetGridObject(end.x, end.y);
 
 
         m_openList = new List<PathFindingNode>();
         m_closedList = new List<PathFindingNode>();
 
         // Cycle through grid, set g to infinite and calculate f cost
-        for (int x = 0; x < m_grid.Width; x++)
+        for (int x = 0; x < Grid.Width; x++)
         {
-            for (int y = 0; y < m_grid.Height; y++)
+            for (int y = 0; y < Grid.Height; y++)
             {
                 // get a reference to the object
-                PathFindingNode pathNode = m_grid.GetGridObject(x, y);
+                PathFindingNode pathNode = Grid.GetGridObject(x, y);
 
                 // set g cost to infinite
                 pathNode.m_gCost = int.MaxValue;
 
                 // calculate f cost
                 pathNode.CalculateFCost();
-                pathNode.cameFromNode = null;
+                pathNode.m_cameFromNode = null;
             }
         }
 
@@ -55,6 +55,7 @@ public class PathFinding
         startNode.m_hCost = CalculateDistanceCost(startNode, endNode);
         startNode.CalculateFCost();
         m_openList.Add(startNode);
+        startNode.m_nodeState = PathFindingNode.NodeState.eInOpenList;
 
         // Cycle through all of the nodes and find a path
         while (m_openList.Count > 0)
@@ -64,6 +65,7 @@ public class PathFinding
 
             m_openList.Remove(currentNode);
             m_closedList.Add(currentNode);
+            currentNode.m_nodeState = PathFindingNode.NodeState.eInClosedList;
 
             // If the currentNode is the end
             if (currentNode == endNode)
@@ -82,8 +84,18 @@ public class PathFinding
                     continue;
                 }
 
+                // If the neighbour blocks the path
+                if (!neighbour.m_isWalkable)
+                {
+                    // add to the closed list
+                    m_closedList.Add(neighbour);
+                    neighbour.m_nodeState = PathFindingNode.NodeState.eBlockade;
+                    // continue to the beginning of the For Loop
+                    continue;
+                }
+
                 // Update the node
-                neighbour.cameFromNode = currentNode;
+                neighbour.m_cameFromNode = currentNode;
                 neighbour.m_gCost = currentNode.m_gCost + CalculateDistanceCost(currentNode, neighbour);
 
                 // Calculate the new H-Cost for the node
@@ -102,6 +114,7 @@ public class PathFinding
                 }
 
                 m_openList.Add(neighbour);
+                neighbour.m_nodeState = PathFindingNode.NodeState.eInOpenList;
             }
         }
 
@@ -125,14 +138,14 @@ public class PathFinding
                 neighbourList.Add(GetNode(currentNode.X - 1, currentNode.Y - 1));
             }
 
-            if (currentNode.Y + 1 < m_grid.Height)
+            if (currentNode.Y + 1 < Grid.Height)
             {
                 // TL
                 neighbourList.Add(GetNode(currentNode.X - 1, currentNode.Y + 1));
             }
         }
 
-        if (currentNode.X + 1 < m_grid.Width)
+        if (currentNode.X + 1 < Grid.Width)
         {
             // Right
             neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y));
@@ -142,7 +155,7 @@ public class PathFinding
                 neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y - 1));
             }
 
-            if (currentNode.Y + 1 < m_grid.Height)
+            if (currentNode.Y + 1 < Grid.Height)
             {
                 // TR
                 neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y + 1));
@@ -156,7 +169,7 @@ public class PathFinding
         }
 
         // Bottom
-        if (currentNode.Y + 1 < m_grid.Height)
+        if (currentNode.Y + 1 < Grid.Height)
         {
             neighbourList.Add(GetNode(currentNode.X, currentNode.Y + 1));
         }
@@ -166,7 +179,7 @@ public class PathFinding
 
     private PathFindingNode GetNode(int x, int y)
     {
-        return m_grid.GetGridObject(x, y);
+        return Grid.GetGridObject(x, y);
     }
 
     private List<PathFindingNode> CalculatePath(PathFindingNode endNode)
@@ -180,10 +193,11 @@ public class PathFinding
 
         // Cycle through the parents until we find a node with no parent
         // this node is the start node
-        while (currentNode.cameFromNode != null)
+        while (currentNode.m_cameFromNode != null)
         {
-            path.Add(currentNode.cameFromNode);
-            currentNode = currentNode.cameFromNode;
+            path.Add(currentNode.m_cameFromNode);
+            currentNode.m_nodeState = PathFindingNode.NodeState.ePath;
+            currentNode = currentNode.m_cameFromNode;
         }
 
         // Reverse the path to go from start to finish

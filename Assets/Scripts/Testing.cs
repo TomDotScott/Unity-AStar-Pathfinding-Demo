@@ -6,9 +6,13 @@ public class Testing : MonoBehaviour
 {
     private PathFinding pt;
     private Vector3 bottomLeft;
+
+    [SerializeField] private PathFindingVisual ptVisual;
+
     void Start()
     {
-        pt = new PathFinding(14, 8);
+        pt = new PathFinding(15, 8);
+        ptVisual.SetGrid(pt.Grid);
         bottomLeft = new Vector3(Camera.main.ScreenToWorldPoint(Vector3.zero).x, Camera.main.ScreenToWorldPoint(Vector3.zero).y, 0);
     }
 
@@ -24,15 +28,15 @@ public class Testing : MonoBehaviour
             List<PathFindingNode> path = pt.FindPath(new Vector2Int(0, 0), xy);
 
             int step = 0;
-            foreach(PathFindingNode node in path)
+            foreach (PathFindingNode node in path)
             {
-                if (node.cameFromNode == null)
+                if (node.m_cameFromNode == null)
                 {
                     Debug.Log("STARTING AT: " + node.X + " " + node.Y);
                 }
                 else
                 {
-                    Debug.Log("STEP " + step + " GO FROM " + node.cameFromNode.X + " " + node.cameFromNode.Y + " TO " + node.X + " " + node.Y);
+                    Debug.Log("STEP " + step + " GO FROM " + node.m_cameFromNode.X + " " + node.m_cameFromNode.Y + " TO " + node.X + " " + node.Y);
                 }
                 step++;
             }
@@ -47,6 +51,26 @@ public class Testing : MonoBehaviour
                     Debug.DrawLine(startPath, endPath, Color.green, 5f);
                 }
             }
+        }
+        else if (Input.GetMouseButtonDown(1))
+        {
+            // Get the vector3 mouse position
+            Vector3 vec = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            Vector2Int xy = pt.Grid.GetXY(vec);
+
+            PathFindingNode currentNode = pt.Grid.GetGridObject(xy.x, xy.y);
+
+            // Set to be unwalkable or walkable if double right clicked
+            currentNode.m_isWalkable = !currentNode.m_isWalkable;
+
+            // Change state for visualisation
+            currentNode.m_nodeState = currentNode.m_nodeState == PathFindingNode.NodeState.eDefault
+                ? PathFindingNode.NodeState.eBlockade
+                : PathFindingNode.NodeState.eDefault;
+
+            Debug.Log(xy.x + " " + xy.y + " Was set to be a blockade");
+
         }
 
     }
