@@ -10,6 +10,8 @@ public class PathFindingVisual : MonoBehaviour
 
     private PathFindingGrid<PathFindingNode> m_grid;
 
+    private bool m_showDebugText = true;
+
     private TextMesh[,] m_debugTextArray;
 
     private Mesh m_mesh;
@@ -79,13 +81,24 @@ public class PathFindingVisual : MonoBehaviour
 
                 MeshUtils.AddToMeshArrays(vertices, uvs, triangles, index, m_grid.GetWorldPosition(x, y) + quadSize * 0.5f, 0, quadSize, gridValueUV, gridValueUV);
 
-
-                m_debugTextArray[x, y].text = node?.ToString();
+                if (m_showDebugText)
+                {
+                    m_debugTextArray[x, y].text = node?.ToString();
+                }
+                else
+                {
+                    m_debugTextArray[x, y].text = " ";
+                }
             }
         }
 
         m_mesh.vertices = vertices;
         m_mesh.uv = uvs;
         m_mesh.triangles = triangles;
+    }
+
+    public void ShowHideDebugText()
+    {
+        m_showDebugText = !m_showDebugText;
     }
 }

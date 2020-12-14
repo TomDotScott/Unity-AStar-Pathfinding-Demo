@@ -16,15 +16,13 @@ public class PathFinding
     // Nodes chosen to traverse
     private List<PathFindingNode> m_closedList;
 
-   
-
     public PathFinding(int width, int height)
     {
         Vector3 bottomLeft = new Vector3(Camera.main.ScreenToWorldPoint(Vector3.zero).x, Camera.main.ScreenToWorldPoint(Vector3.zero).y, 0);
         Grid = new PathFindingGrid<PathFindingNode>(width, height, 5f, bottomLeft, (PathFindingGrid<PathFindingNode> g, int x, int y) => new PathFindingNode(g, x, y, true));
     }
 
-    public List<PathFindingNode> FindPath(Vector2Int start, Vector2Int end)
+    public List<PathFindingNode> FindPath(Vector2Int start, Vector2Int end, bool canTravelDiagonally)
     {
         PathFindingNode startNode = Grid.GetGridObject(start.x, start.y);
         PathFindingNode endNode = Grid.GetGridObject(end.x, end.y);
@@ -76,7 +74,7 @@ public class PathFinding
             }
 
 
-            foreach (var neighbour in GetNeighbourNodes(currentNode))
+            foreach (var neighbour in GetNeighbourNodes(currentNode, canTravelDiagonally))
             {
                 // Make sure the current neighbour node isn't in the closed list
                 if (m_closedList.Contains(neighbour))
@@ -122,7 +120,7 @@ public class PathFinding
         return null;
     }
 
-    private List<PathFindingNode> GetNeighbourNodes(PathFindingNode currentNode)
+    private List<PathFindingNode> GetNeighbourNodes(PathFindingNode currentNode, bool canTravelDiagonally)
     {
         List<PathFindingNode> neighbourList = new List<PathFindingNode>();
 
@@ -132,16 +130,18 @@ public class PathFinding
             // Left
             neighbourList.Add(GetNode(currentNode.X - 1, currentNode.Y));
 
-            if (currentNode.Y - 1 >= 0)
-            {
-                // BL
-                neighbourList.Add(GetNode(currentNode.X - 1, currentNode.Y - 1));
-            }
+            if (canTravelDiagonally) {
+                if (currentNode.Y - 1 >= 0)
+                {
+                    // BL
+                    neighbourList.Add(GetNode(currentNode.X - 1, currentNode.Y - 1));
+                }
 
-            if (currentNode.Y + 1 < Grid.Height)
-            {
-                // TL
-                neighbourList.Add(GetNode(currentNode.X - 1, currentNode.Y + 1));
+                if (currentNode.Y + 1 < Grid.Height)
+                {
+                    // TL
+                    neighbourList.Add(GetNode(currentNode.X - 1, currentNode.Y + 1));
+                }
             }
         }
 
@@ -149,16 +149,19 @@ public class PathFinding
         {
             // Right
             neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y));
-            if (currentNode.Y - 1 >= 0)
+            if (canTravelDiagonally)
             {
-                // BR
-                neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y - 1));
-            }
+                if (currentNode.Y - 1 >= 0)
+                {
+                    // BR
+                    neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y - 1));
+                }
 
-            if (currentNode.Y + 1 < Grid.Height)
-            {
-                // TR
-                neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y + 1));
+                if (currentNode.Y + 1 < Grid.Height)
+                {
+                    // TR
+                    neighbourList.Add(GetNode(currentNode.X + 1, currentNode.Y + 1));
+                }
             }
         }
 
