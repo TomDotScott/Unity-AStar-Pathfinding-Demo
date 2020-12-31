@@ -40,19 +40,19 @@ public class Bot : MonoBehaviour
             {
                 Vector3 newPosition = GridXYToWorld(new Vector2Int(m_path[0].X, m_path[0].Y));
 
-                Debug.Log("Currently at: " + transform.position + "\nMoving towards: " + newPosition);
-
                 // Move towards the new position
                 transform.position = Vector3.MoveTowards(transform.position, newPosition, m_speed * Time.deltaTime);
 
                 if (Mathf.Abs(Vector3.Distance(transform.position, newPosition)) < 0.1f)
                 {
-                    Debug.Log("I have reached my destination");
                     // We have reached the new destination so remove the front element
                     m_path.Remove(m_path[0]);
                 }
             }
-
+            else
+            {
+                transform.position = Vector3.MoveTowards(transform.position, new Vector3(m_endLocation.x, m_endLocation.y), m_speed * Time.deltaTime);
+            }
         }
     }
 
@@ -112,8 +112,6 @@ public class Bot : MonoBehaviour
             currentNode.m_nodeState = currentNode.m_nodeState == PathFindingNode.NodeState.eDefault
                 ? PathFindingNode.NodeState.eBlockade
                 : PathFindingNode.NodeState.eDefault;
-
-            Debug.Log(xy.x + " " + xy.y + " Was set to be a blockade");
         }
     }
 
@@ -125,20 +123,6 @@ public class Bot : MonoBehaviour
         Vector2Int endLocation = m_pathFinding.Grid.GetXY(end);
 
         m_path = m_pathFinding.FindPath(startLocation, endLocation, m_canTravelDiagonally);
-
-        int step = 0;
-        foreach (PathFindingNode node in m_path)
-        {
-            if (node.m_cameFromNode == null)
-            {
-                Debug.Log("STARTING AT: " + node.X + " " + node.Y);
-            }
-            else
-            {
-                Debug.Log("STEP " + step + " GO FROM " + node.m_cameFromNode.X + " " + node.m_cameFromNode.Y + " TO " + node.X + " " + node.Y);
-            }
-            step++;
-        }
     }
 
     // Called from a UI Button
@@ -161,6 +145,6 @@ public class Bot : MonoBehaviour
 
     Vector3 GridXYToWorld(Vector2Int gridXY)
     {
-        return new Vector3(10 * gridXY.x + m_screenBottomLeft.x - 7.5f, 10 * gridXY.y + m_screenBottomLeft.y + 2.5f);
+        return ((new Vector3(gridXY.x, gridXY.y) * 5) + m_screenBottomLeft) + (new Vector3(5, 5) * 0.5f);
     }
 }
